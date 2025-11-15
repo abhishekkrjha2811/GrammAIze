@@ -1,7 +1,10 @@
-import { SignedIn, SignedOut, SignIn } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignIn, SignUp } from '@clerk/clerk-react';
 import { Navigate } from 'react-router-dom';
+import { useState } from 'react';
 
 export default function Login() {
+  const [isSignUp, setIsSignUp] = useState(false);
+
   return (
     <div>
       <style>{`
@@ -21,24 +24,70 @@ export default function Login() {
             <p className="text-white/90 text-lg font-light drop-shadow">Master your writing with AI-powered insights</p>
           </div>
 
-          {/* Main login area */}
+          {/* Toggle buttons */}
+          <div className="relative z-10 flex justify-center px-4 mb-6">
+            <div className="bg-white/20 backdrop-blur-sm rounded-lg p-1 flex">
+              <button
+                onClick={() => setIsSignUp(false)}
+                className={`px-6 py-2 rounded-md font-medium transition-all ${
+                  !isSignUp 
+                    ? 'bg-white text-indigo-600 shadow-md' 
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                onClick={() => setIsSignUp(true)}
+                className={`px-6 py-2 rounded-md font-medium transition-all ${
+                  isSignUp 
+                    ? 'bg-white text-indigo-600 shadow-md' 
+                    : 'text-white hover:bg-white/10'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+          </div>
+
+          {/* Main auth area */}
           <div className="relative z-10 flex justify-center px-4 pb-16">
             <div className="w-full max-w-md">
-              <SignIn 
-                routing="hash"
-                appearance={{
-                  elements: {
-                    rootBox: "w-full",
-                    card: "w-full shadow-2xl border-0 bg-white/95 backdrop-blur-sm",
-                    header: "pb-4",
-                    headerTitle: "text-2xl font-bold text-gray-900",
-                    headerSubtitle: "text-gray-600",
-                    socialButtonsBlockButton: "border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50",
-                    formButtonPrimary: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
-                    footerActionLink: "text-indigo-600 hover:text-indigo-700",
-                  }
-                }}
-              />
+              {!isSignUp ? (
+                <SignIn 
+                  routing="hash"
+                  signUpUrl="/login"
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full",
+                      card: "w-full shadow-2xl border-0 bg-white/95 backdrop-blur-sm",
+                      header: "pb-4",
+                      headerTitle: "text-2xl font-bold text-gray-900",
+                      headerSubtitle: "text-gray-600",
+                      socialButtonsBlockButton: "border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50",
+                      formButtonPrimary: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
+                      footerActionLink: "text-indigo-600 hover:text-indigo-700",
+                    }
+                  }}
+                />
+              ) : (
+                <SignUp 
+                  routing="hash"
+                  signInUrl="/login"
+                  appearance={{
+                    elements: {
+                      rootBox: "w-full",
+                      card: "w-full shadow-2xl border-0 bg-white/95 backdrop-blur-sm",
+                      header: "pb-4",
+                      headerTitle: "text-2xl font-bold text-gray-900",
+                      headerSubtitle: "text-gray-600",
+                      socialButtonsBlockButton: "border border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50",
+                      formButtonPrimary: "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700",
+                      footerActionLink: "text-indigo-600 hover:text-indigo-700",
+                    }
+                  }}
+                />
+              )}
             </div>
           </div>
 
