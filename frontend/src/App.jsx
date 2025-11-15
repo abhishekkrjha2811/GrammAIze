@@ -1,12 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import Login from './Login';
 import Home from './components/Home.jsx';
+import Header from './components/Header.jsx';
+import Grammaizer from './components/Grammaizer.jsx';
+import About from './components/About.jsx';
 
-export default function App() {
+// Protected Route Component
+function ProtectedRoute({ children }) {
   const { isSignedIn, isLoaded } = useUser();
-
-  // Show loading state while Clerk is loading
+  
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -17,19 +20,45 @@ export default function App() {
       </div>
     );
   }
+  
+  if (!isSignedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  return children;
+}
+
+// Component to conditionally render Header
+function AppContent() {
+  const location = useLocation();
+  
+  // Don't show header on login page
+  const showHeader = location.pathname !== '/login';
 
   return (
-    <Router>
+    <>
+      {showHeader && <Header />}
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/about" element={<About />} />
         <Route 
-          path="/login" 
-          element={isSignedIn ? <Navigate to="/" replace /> : <Login />} 
-        />
-        <Route 
-          path="/" 
-          element={<Home />} 
+          path="/grammaizer" 
+          element={
+            <ProtectedRoute>
+              <Grammaizer />
+            </ProtectedRoute>
+          } 
         />
       </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
