@@ -15,7 +15,7 @@ export default function Login() {
       `}</style>
 
       <SignedOut>
-        <div className="min-h-screen w-full bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500">
+        <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
           {/* Back Button */}
           <div className="absolute top-4 left-4 z-20">
             <Link 
