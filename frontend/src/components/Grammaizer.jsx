@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { API_CONFIG, apiRequest } from '../config/api';
 
 const Grammaizer = () => {
   const [activeTab, setActiveTab] = useState('grammar');
@@ -15,14 +16,40 @@ const Grammaizer = () => {
     
     setIsLoading(true);
     setResult('');
+    setErrorCount(0);
     
-    // Simulate API call
-    setTimeout(() => {
-      const corrections = Math.floor(Math.random() * 5) + 1;
-      setErrorCount(corrections);
-      setResult(`✨ Found and corrected ${corrections} grammar issue${corrections > 1 ? 's' : ''}!\n\n${grammarText.replace(/\bi\b/g, 'I').replace(/\bim\b/g, 'I\'m').replace(/\bwont\b/g, 'won\'t')}`);
+    try {
+      const data = await apiRequest(API_CONFIG.ENDPOINTS.GRAMMAR_CORRECT, {
+        method: 'POST',
+        body: JSON.stringify({
+          text: grammarText,
+          max_length: 512
+        }),
+      });
+      setErrorCount(data.mistakes_count);
+      
+      let resultText = `✨ Grammar Check Complete!\n\n`;
+      resultText += `📊 Analysis Results:\n`;
+      resultText += `• Mistakes found: ${data.mistakes_count}\n`;
+      resultText += `• Confidence: ${(data.confidence * 100).toFixed(1)}%\n\n`;
+      
+      if (data.corrections_made.length > 0) {
+        resultText += `🔧 Corrections Made:\n`;
+        data.corrections_made.forEach((correction, index) => {
+          resultText += `${index + 1}. ${correction}\n`;
+        });
+        resultText += `\n📝 Corrected Text:\n${data.corrected_text}`;
+      } else {
+        resultText += `✅ Great! No grammar errors found.\n\n📝 Original Text:\n${data.original_text}`;
+      }
+      
+      setResult(resultText);
+    } catch (error) {
+      console.error('Grammar check error:', error);
+      setResult(`❌ Error: ${error.message}. Please make sure the backend server is running on ${API_CONFIG.BASE_URL}`);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleSummarization = async () => {
@@ -31,13 +58,31 @@ const Grammaizer = () => {
     setIsLoading(true);
     setResult('');
     
-    // Simulate API call
-    setTimeout(() => {
-      const wordCount = summaryText.split(' ').length;
-      const summaryLength = Math.max(Math.floor(wordCount * 0.3), 10);
-      setResult(`📝 ${toneStyle.charAt(0).toUpperCase() + toneStyle.slice(1)} Summary (${summaryLength} words):\n\nThis is a concise ${toneStyle} summary of your text, capturing the key points and main ideas while maintaining the requested tone and style.`);
+    try {
+      const data = await apiRequest(API_CONFIG.ENDPOINTS.SUMMARY_GENERATE, {
+        method: 'POST',
+        body: JSON.stringify({
+          text: summaryText,
+          tone: toneStyle,
+          max_length: 500
+        }),
+      });
+      
+      let resultText = `📝 ${toneStyle.charAt(0).toUpperCase() + toneStyle.slice(1)} Summary\n\n`;
+      resultText += `${data.summary}\n\n`;
+      resultText += `📊 Summary Stats:\n`;
+      resultText += `• Original length: ${summaryText.length} characters\n`;
+      resultText += `• Summary length: ${data.summary.length} characters\n`;
+      resultText += `• Compression ratio: ${(((summaryText.length - data.summary.length) / summaryText.length) * 100).toFixed(1)}%\n`;
+      resultText += `• Tone style: ${toneStyle}`;
+      
+      setResult(resultText);
+    } catch (error) {
+      console.error('Summarization error:', error);
+      setResult(`❌ Error: ${error.message}. Please make sure the backend server is running on ${API_CONFIG.BASE_URL} and you have configured your Google Gemini API key.`);
+    } finally {
       setIsLoading(false);
-    }, 2500);
+    }
   };
 
   const clearAll = () => {
@@ -45,6 +90,21 @@ const Grammaizer = () => {
     setSummaryText('');
     setResult('');
     setErrorCount(0);
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(result);
+      // You could add a toast notification here
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = result;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
   };
 
   return (
@@ -87,9 +147,9 @@ const Grammaizer = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Input Section */}
-                    <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6">
+          <div className="lg:col-span-3 bg-white rounded-lg shadow-md p-6">
             {activeTab === 'grammar' ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -189,7 +249,7 @@ const Grammaizer = () => {
           </div>
 
           {/* Results Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-6 h-fit">
             <h3 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
               <span className="mr-2">🎯</span>
               Results
@@ -206,13 +266,16 @@ const Grammaizer = () => {
                   </div>
                 )}
                 
-                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-l-gray-500">
-                  <pre className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans">
+                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-l-gray-500 max-h-96 overflow-y-auto">
+                  <div className="whitespace-pre-wrap text-gray-700 text-sm leading-relaxed font-sans overflow-wrap-anywhere">
                     {result}
-                  </pre>
+                  </div>
                 </div>
                 
-                <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors">
+                <button 
+                  onClick={copyToClipboard}
+                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors"
+                >
                   Copy to Clipboard
                 </button>
               </div>
