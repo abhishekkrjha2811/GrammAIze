@@ -3,6 +3,7 @@ import { useUser } from '@clerk/clerk-react';
 import Login from './Login';
 import Home from './components/Home.jsx';
 import Header from './components/Header.jsx';
+import Footer from './components/Footer.jsx';
 import Grammaizer from './components/Grammaizer.jsx';
 import About from './components/About.jsx';
 
@@ -34,12 +35,12 @@ function AppContent() {
     );
   }
   
-  // Don't show header on login page
-  const showHeader = location.pathname !== '/login';
+  // Don't show header and footer on login page
+  const showHeaderFooter = location.pathname !== '/login';
 
   return (
     <>
-      {showHeader && <Header />}
+      {showHeaderFooter && <Header />}
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Home />} />
@@ -53,6 +54,7 @@ function AppContent() {
           } 
         />
       </Routes>
+      {showHeaderFooter && <Footer />}
     </>
   );
 }
